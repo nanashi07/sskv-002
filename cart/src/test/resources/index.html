@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Message Test</title>
+    <style>
+        textarea.history {
+            width: 98%;
+            height: 160pt;
+            background-color: lightgrey;
+        }
+
+        input[type=number] {
+            width: 50px;
+        }
+
+        p.courses label {
+            color: red;
+            margin-right: 30px;
+        }
+    </style>
+    <script>
+        function obtainChannel() {
+            if (window.socket) {
+                return new Promise((resolve, _) => {
+                    resolve(window.socket);
+                });
+            } else {
+                let channel = new WebSocket('ws://localhost:8080/message');
+                channel.onmessage = receive;
+                channel.onclose = e => {
+                    delete window.socket;
+                    console.warn('Channel closed!')
+                };
+                return new Promise((resolve, _) => {
+                    channel.onopen = e => {
+                        console.log('Channel opened.');
+                        window.socket = channel;
+                        resolve(channel);
+                    };
+                });
+            }
+        }
+
+        function receive(e) {
+            let s = document.querySelector('.history');
+            s.textContent += `${new Date().toISOString()} ${e.data}\n`;
+            s.scrollBy({top: 100})
+        }
+
+        function prepareCart() {
+            let inputs = document.querySelectorAll('.cart-item');
+            return Array.prototype.map.call(inputs, e => e)
+                .map(e => {
+                    return {
+                        eventId: e.getAttribute('event-id'),
+                        showId: e.getAttribute('show-id'),
+                        price: e.getAttribute('price') * 1.0,
+                        quantity: e.value * 1 || 0
+                    };
+                })
+                .filter(e => e.quantity > 0);
+        }
+
+        function submitBooking(e) {
+            let items = prepareCart();
+            console.log(items);
+            if (items.length > 0) {
+                obtainChannel().then(channel => {
+                    channel.send(JSON.stringify({
+                        command: 'booking',
+                        key: `M${Math.random() * 1000000000000000000}`,
+                        data: items
+                    }));
+                });
+            } else {
+                console.log('No booking to submit.');
+            }
+        }
+
+        window.addEventListener('load', e => {
+            console.log('document loaded');
+
+            let button = document.querySelector('.send');
+            button.addEventListener('click', submitBooking);
+
+            let evt = e => {
+                let total = Array.prototype.map
+                    .call(document.querySelectorAll('.cart-item'), e => {
+                        return parseInt(e.getAttribute('price')) * (e.value * 1 || 0);
+                    })
+                    .reduce((previousValue, currentValue) => previousValue + currentValue);
+                document.querySelector('#total-payment').textContent = total.toString();
+            };
+            document.querySelectorAll('.cart-item').forEach(e => {
+                e.addEventListener('change', evt);
+                e.addEventListener('keyup', evt);
+            });
+        });
+
+    </script>
+</head>
+<body>
+<p>
+<form>
+    <p class="courses">
+    <ul>
+        <li>
+            Java crash course
+            <ul>
+                <li>
+                    <label>Aug 2020</label>
+                    tickets:
+                    <input class="cart-item"
+                           event-id="01G9919QSBN0SRT13V9HCCYR15"
+                           show-id="1b74c45d-5fa0-4504-a9f8-44d180eb19de"
+                           price="200"
+                           type="number"
+                           max="10"
+                           min="0"/>
+                    price: 200
+                </li>
+                <li>
+                    <label>Oct 2020</label>
+                    tickets:
+                    <input class="cart-item"
+                           event-id="01G9919QSBN0SRT13V9HCCYR15"
+                           show-id="75cb0393-6fd7-49b0-af53-c162dde8dc9c"
+                           price="150"
+                           type="number"
+                           max="10"
+                           min="0"/>
+                    price: 150
+                </li>
+            </ul>
+        </li>
+        <li>
+            Kubernetes foundation
+            <ul>
+                <li>
+                    <label>Aug 2020</label>
+                    tickets:
+                    <input class="cart-item"
+                           event-id="01G991A3JXJK5Q2MD48ZNMREP6"
+                           show-id="48d5d925-3f3c-443b-a997-1e9dd6f769ce"
+                           price="180"
+                           type="number"
+                           max="10"
+                           min="0"/>
+                    price: 180
+                </li>
+                <li>
+                    <label>Sep 2020</label>
+                    tickets:
+                    <input class="cart-item"
+                           event-id="01G991A3JXJK5Q2MD48ZNMREP6"
+                           show-id="fb874151-c85f-4ecf-bc1e-eb4714ecda4d"
+                           price="240"
+                           type="number"
+                           max="10"
+                           min="0"/>
+                    price: 240
+                </li>
+            </ul>
+        </li>
+    </ul>
+    </p>
+    <p>
+        Total payment: <span id="total-payment">0</span>
+    </p>
+    <p>
+        <input class="send" type="button" value="Book"/>
+    </p>
+    <p class="console">
+        <textarea class="history" readonly="readonly"></textarea>
+    </p>
+</form>
+</p>
+</body>
+</html>
