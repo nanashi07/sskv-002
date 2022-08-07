@@ -1,2 +1,12 @@
 server:
-  port: 8090
+  port: 8082
+com:
+  prhythm:
+    sskv002:
+      order:
+        kafka:
+          bootstrapAddress: localhost:9092
+logging:
+  level:
+    root: info
+    com.prhythm.sskv002: debug

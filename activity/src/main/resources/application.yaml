@@ -1,0 +1,12 @@
+server:
+  port: 8081
+com:
+  prhythm:
+    sskv002:
+      activity:
+        kafka:
+          bootstrapAddress: localhost:9092
+logging:
+  level:
+    root: info
+    com.prhythm.sskv002: debug

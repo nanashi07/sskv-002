@@ -1,6 +1,6 @@
 package com.prhythm.sskv002.cart.socket.exception
 
-class MessageException : RuntimeException {
+class DirectiveException : RuntimeException {
 
     var key: String? = null
 

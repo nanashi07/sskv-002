@@ -1,7 +1,7 @@
 package com.prhythm.sskv002.cart.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.prhythm.sskv002.cart.socket.exception.MessageException
+import com.prhythm.sskv002.cart.socket.exception.DirectiveException
 import com.prhythm.sskv002.cart.socket.vo.BookingDirective
 import com.prhythm.sskv002.cart.socket.vo.Directive
 import kotlinx.coroutines.reactor.mono
@@ -10,7 +10,10 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 
 @Service
-class DirectiveDispatcher(private val mapper: ObjectMapper) {
+class DirectiveDispatcher(
+    private val mapper: ObjectMapper,
+    private val cartService: CartService,
+) {
 
     private val log = LoggerFactory.getLogger(DirectiveDispatcher::class.java)
 
@@ -23,7 +26,7 @@ class DirectiveDispatcher(private val mapper: ObjectMapper) {
     private fun validateCommand(directive: Directive): Boolean {
         return when (directive.command) {
             "booking" -> true
-            else -> throw MessageException("Invalid command: ${directive.command}")
+            else -> throw DirectiveException("Invalid command: ${directive.command}")
                 .apply { key = directive.key }
         }
     }
@@ -31,13 +34,10 @@ class DirectiveDispatcher(private val mapper: ObjectMapper) {
     fun dispatch(directive: Directive): Mono<Void> {
         log.info("dispatch: {}", directive)
 
-        val bookingDirective = BookingDirective(directive)
-
-        // TODO:
-        return mono {
-            directive.command
-            ""
-        }.then()
+        // DUMMY: handle commands dispatch
+        return mono { BookingDirective(directive) }
+            .flatMap { cartService.validate(it) }
+            .flatMap { cartService.booking(it) }
     }
 
 }
